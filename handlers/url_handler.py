@@ -5,7 +5,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, MessageHandler, CommandHandler, CallbackQueryHandler, filters
 from database.db import get_user, get_settings, get_task, set_task, clear_task
 from helpers.downloader import (
-    download_with_aria2, download_with_ytdlp,
+    download_file, download_with_ytdlp,
     download_gdrive, shorten_url, unshorten_url, is_direct_link
 )
 from config import Config
@@ -66,10 +66,10 @@ async def url_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif action == "url_upload":
         pm = await q.message.reply_text("⏳ Downloading file from URL...")
         dest = os.path.join(Config.DOWNLOAD_DIR, str(uid))
-        mode = s.get("url_mode", "aria2c")
-        path = download_with_aria2(url, dest) if mode == "aria2c" else None
+        mode = s.get("url_mode", "httpx")
+        path = download_file(url, dest) if mode == "httpx" else None
         if not path:
-            path = download_with_aria2(url, dest)
+            path = download_file(url, dest)
         if path and os.path.exists(path):
             await context.bot.send_document(chat, open(path, "rb"),
                                             caption=f"✅ Downloaded: {Path(path).name}")
@@ -115,7 +115,7 @@ async def url_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif action == "url_extract":
         pm   = await q.message.reply_text("⏳ Downloading & extracting archive...")
         dest = os.path.join(Config.DOWNLOAD_DIR, str(uid))
-        path = download_with_aria2(url, dest)
+        path = download_file(url, dest)
         if path and os.path.exists(path):
             out_dir = path + "_extracted"
             from helpers.ffmpeg_helper import extract_archive
