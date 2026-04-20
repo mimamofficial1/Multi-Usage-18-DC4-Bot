@@ -1,8 +1,8 @@
 """
 helpers/downloader.py
-Download files from URLs using aria2c or yt-dlp.
+Download files from URLs using httpx (pure Python, no aria2c).
 """
-import os, subprocess, asyncio, time
+import os, subprocess, time
 from pathlib import Path
 from config import Config
 
@@ -13,20 +13,27 @@ def _run(cmd: list[str]) -> tuple[int, str, str]:
 
 
 def download_with_aria2(url: str, dest_dir: str, filename: str | None = None) -> str | None:
-    """Download a direct URL using aria2c. Returns output file path or None."""
+    """Download a direct URL using httpx (aria2 replacement). Returns output file path or None."""
+    import httpx
     os.makedirs(dest_dir, exist_ok=True)
-    cmd = ["aria2c", url, "-d", dest_dir, "--continue=true",
-           "--max-connection-per-server=16", "--split=16",
-           "--min-split-size=1M", "--file-allocation=none"]
-    if filename:
-        cmd += ["-o", filename]
-    rc, out, _ = _run(cmd)
-    if rc == 0:
-        # Return the downloaded file
-        files = list(Path(dest_dir).glob("*"))
-        files.sort(key=lambda p: p.stat().st_mtime, reverse=True)
-        return str(files[0]) if files else None
-    return None
+    try:
+        with httpx.stream("GET", url, follow_redirects=True, timeout=300) as r:
+            r.raise_for_status()
+            # Determine filename from Content-Disposition or URL
+            if not filename:
+                cd = r.headers.get("content-disposition", "")
+                if "filename=" in cd:
+                    filename = cd.split("filename=")[-1].strip().strip('"')
+                else:
+                    filename = Path(url.split("?")[0]).name or f"file_{int(time.time())}"
+            out_path = os.path.join(dest_dir, filename)
+            with open(out_path, "wb") as f:
+                for chunk in r.iter_bytes(chunk_size=1024 * 1024):
+                    f.write(chunk)
+        return out_path
+    except Exception as e:
+        print(f"[download_with_aria2] Error: {e}")
+        return None
 
 
 def download_with_ytdlp(url: str, dest_dir: str, fmt: str = "mp4") -> str | None:
