@@ -35,7 +35,7 @@ def _create_user(user_id: int) -> dict:
             "rename_file":  True,
             "upload_type":  "document",   # document | audio | video
             "split_size":   "4GB",
-            "url_mode":     "aria2c",
+            "url_mode":     "httpx",
             "ytdl_filter":  "mp4",
         },
         "usettings": {
