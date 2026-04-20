@@ -67,7 +67,7 @@ def _usettings_keyboard(uid: int) -> InlineKeyboardMarkup:
             callback_data="ustg_split_size"
         )],
         [InlineKeyboardButton(
-            f"🔗 Url Upload Mode : {get_settings(uid).get('url_mode','aria2c')}",
+            f"🔗 Url Upload Mode : {get_settings(uid).get('url_mode','httpx')}",
             callback_data="ustg_url_mode"
         )],
         [InlineKeyboardButton(
@@ -147,7 +147,7 @@ async def settings_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "rename_file": True,
             "upload_type": "document",
             "split_size":  "4GB",
-            "url_mode":    "aria2c",
+            "url_mode":    "httpx",
             "ytdl_filter": "mp4",
         }})
         await q.edit_message_reply_markup(_settings_keyboard(uid))
@@ -198,9 +198,9 @@ async def settings_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await q.edit_message_reply_markup(_usettings_keyboard(uid))
 
     elif data == "ustg_url_mode":
-        modes = ["aria2c", "wget", "requests"]
-        cur   = get_settings(uid).get("url_mode", "aria2c")
-        nxt   = modes[(modes.index(cur) + 1) % len(modes)] if cur in modes else "aria2c"
+        modes = ["httpx", "wget", "requests"]
+        cur   = get_settings(uid).get("url_mode", "httpx")
+        nxt   = modes[(modes.index(cur) + 1) % len(modes)] if cur in modes else "httpx"
         update_settings(uid, "url_mode", nxt)
         await q.edit_message_reply_markup(_usettings_keyboard(uid))
 
