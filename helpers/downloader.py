@@ -1,6 +1,6 @@
 """
 helpers/downloader.py
-Download files from URLs using httpx (pure Python, no aria2c).
+Download files from URLs using httpx (pure Python).
 """
 import os, subprocess, time
 from pathlib import Path
@@ -12,14 +12,13 @@ def _run(cmd: list[str]) -> tuple[int, str, str]:
     return r.returncode, r.stdout, r.stderr
 
 
-def download_with_aria2(url: str, dest_dir: str, filename: str | None = None) -> str | None:
-    """Download a direct URL using httpx (aria2 replacement). Returns output file path or None."""
+def download_file(url: str, dest_dir: str, filename: str | None = None) -> str | None:
+    """Download a direct URL using httpx. Returns output file path or None."""
     import httpx
     os.makedirs(dest_dir, exist_ok=True)
     try:
         with httpx.stream("GET", url, follow_redirects=True, timeout=300) as r:
             r.raise_for_status()
-            # Determine filename from Content-Disposition or URL
             if not filename:
                 cd = r.headers.get("content-disposition", "")
                 if "filename=" in cd:
@@ -32,7 +31,7 @@ def download_with_aria2(url: str, dest_dir: str, filename: str | None = None) ->
                     f.write(chunk)
         return out_path
     except Exception as e:
-        print(f"[download_with_aria2] Error: {e}")
+        print(f"[download_file] Error: {e}")
         return None
 
 
@@ -63,7 +62,6 @@ def download_gdrive(url: str, dest_dir: str) -> str | None:
 
 
 def shorten_url(url: str) -> str:
-    """Shorten a URL using tinyurl."""
     import urllib.request
     try:
         api = f"https://tinyurl.com/api-create.php?url={url}"
@@ -74,7 +72,6 @@ def shorten_url(url: str) -> str:
 
 
 def unshorten_url(url: str) -> str:
-    """Follow redirects to get the final URL."""
     import urllib.request
     try:
         req = urllib.request.Request(url, method="HEAD")
@@ -85,7 +82,6 @@ def unshorten_url(url: str) -> str:
 
 
 def is_direct_link(url: str) -> bool:
-    """Check if URL points directly to a file."""
     import urllib.request
     try:
         req = urllib.request.Request(url, method="HEAD")
