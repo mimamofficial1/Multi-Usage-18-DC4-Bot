@@ -1,0 +1,6 @@
+python-telegram-bot==21.3
+pymongo==4.7.2
+psutil==5.9.8
+yt-dlp==2024.5.27
+gdown==5.2.0
+mutagen==1.47.0
